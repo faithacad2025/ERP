@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { User, SchoolId, Transaction, LeaveRequest, CalendarEvent } from '../types';
-import { SCHOOLS, MOCK_TIMETABLE } from '../constants';
+import { SCHOOLS, MOCK_STAFF_LIST, MOCK_TRANSACTIONS, MOCK_STUDENTS, MOCK_TIMETABLE, MOCK_LEAVES, MOCK_EVENTS } from '../constants';
 import { StaffManagement } from './admin/StaffManagement';
 import { FinanceManagement } from './admin/FinanceManagement';
 import { StudentManagement } from './admin/StudentManagement';
@@ -18,37 +19,18 @@ import {
 interface DashboardViewProps {
   user: User;
   onLogout: () => void;
-  
-  // Shared State Props
-  staffList: User[];
-  setStaffList: React.Dispatch<React.SetStateAction<User[]>>;
-  students: User[];
-  setStudents: React.Dispatch<React.SetStateAction<User[]>>;
-  transactions: Transaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-  leaves: LeaveRequest[];
-  setLeaves: React.Dispatch<React.SetStateAction<LeaveRequest[]>>;
-  events: CalendarEvent[];
-  setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
 }
 
 type DashboardViewType = 'dashboard' | 'staff_management' | 'students' | 'finance' | 'admissions' | 'timetable' | 'attendance' | 'leave_request' | 'reports' | 'calendar';
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ 
-  user, 
-  onLogout,
-  staffList,
-  setStaffList,
-  students,
-  setStudents,
-  transactions,
-  setTransactions,
-  leaves,
-  setLeaves,
-  events,
-  setEvents
-}) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) => {
   const [currentView, setCurrentView] = useState<DashboardViewType>('dashboard');
+  // Hoisted state to persist changes across views
+  const [staffList, setStaffList] = useState<User[]>(MOCK_STAFF_LIST);
+  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [students, setStudents] = useState<User[]>(MOCK_STUDENTS);
+  const [leaves, setLeaves] = useState<LeaveRequest[]>(MOCK_LEAVES);
+  const [events, setEvents] = useState<CalendarEvent[]>(MOCK_EVENTS);
   
   const school = SCHOOLS.find(s => s.id === user.schoolId);
   const isAdmin = user.role === 'admin';

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CalendarEvent, EventType } from '../../types';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -24,22 +24,15 @@ export const EventsCalendar: React.FC<EventsCalendarProps> = ({ onBack, events, 
     title: string;
     type: EventType;
     description: string;
-    date: string;
     startTime: string;
     endTime: string;
   }>({
     title: '',
     type: 'Meeting',
     description: '',
-    date: selectedDate,
     startTime: '',
     endTime: ''
   });
-
-  // Update form date when selected date changes
-  useEffect(() => {
-    setFormData(prev => ({ ...prev, date: selectedDate }));
-  }, [selectedDate]);
 
   // Calendar Logic
   const year = currentDate.getFullYear();
@@ -67,11 +60,11 @@ export const EventsCalendar: React.FC<EventsCalendarProps> = ({ onBack, events, 
 
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.date) return;
+    if (!formData.title) return;
 
     const newEvent: CalendarEvent = {
       id: `evt_${Date.now()}`,
-      date: formData.date,
+      date: selectedDate,
       title: formData.title,
       type: formData.type,
       description: formData.description,
@@ -84,7 +77,6 @@ export const EventsCalendar: React.FC<EventsCalendarProps> = ({ onBack, events, 
       title: '',
       type: 'Meeting',
       description: '',
-      date: selectedDate,
       startTime: '',
       endTime: ''
     });
@@ -243,13 +235,6 @@ export const EventsCalendar: React.FC<EventsCalendarProps> = ({ onBack, events, 
                    value={formData.title}
                    onChange={e => setFormData({...formData, title: e.target.value})}
                    placeholder="e.g. Sports Day"
-                 />
-                 <Input 
-                   label="Date" 
-                   type="date"
-                   required
-                   value={formData.date}
-                   onChange={e => setFormData({...formData, date: e.target.value})}
                  />
                  <Select
                    label="Type"
