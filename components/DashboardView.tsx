@@ -1,9 +1,12 @@
+
 import React, { useState } from 'react';
-import { User, SchoolId, Transaction, LeaveRequest } from '../types';
-import { SCHOOLS, MOCK_STAFF_LIST, MOCK_TRANSACTIONS, MOCK_STUDENTS, MOCK_TIMETABLE, MOCK_LEAVES } from '../constants';
+import { User, SchoolId, Transaction, LeaveRequest, CalendarEvent } from '../types';
+import { SCHOOLS, MOCK_STAFF_LIST, MOCK_TRANSACTIONS, MOCK_STUDENTS, MOCK_TIMETABLE, MOCK_LEAVES, MOCK_EVENTS } from '../constants';
 import { StaffManagement } from './admin/StaffManagement';
 import { FinanceManagement } from './admin/FinanceManagement';
 import { StudentManagement } from './admin/StudentManagement';
+import { ReportsAnalytics } from './admin/ReportsAnalytics';
+import { EventsCalendar } from './admin/EventsCalendar';
 import { TimetableView } from './staff/TimetableView';
 import { AttendanceView } from './staff/AttendanceView';
 import { LeaveRequestView } from './staff/LeaveRequestView';
@@ -18,7 +21,7 @@ interface DashboardViewProps {
   onLogout: () => void;
 }
 
-type DashboardViewType = 'dashboard' | 'staff_management' | 'students' | 'finance' | 'admissions' | 'timetable' | 'attendance' | 'leave_request';
+type DashboardViewType = 'dashboard' | 'staff_management' | 'students' | 'finance' | 'admissions' | 'timetable' | 'attendance' | 'leave_request' | 'reports' | 'calendar';
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) => {
   const [currentView, setCurrentView] = useState<DashboardViewType>('dashboard');
@@ -27,6 +30,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [students, setStudents] = useState<User[]>(MOCK_STUDENTS);
   const [leaves, setLeaves] = useState<LeaveRequest[]>(MOCK_LEAVES);
+  const [events, setEvents] = useState<CalendarEvent[]>(MOCK_EVENTS);
   
   const school = SCHOOLS.find(s => s.id === user.schoolId);
   const isAdmin = user.role === 'admin';
@@ -68,6 +72,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
             setTransactions={setTransactions}
           />
         );
+      case 'reports':
+        return (
+          <ReportsAnalytics
+            onBack={() => setCurrentView('dashboard')}
+            students={students}
+            transactions={transactions}
+            staffList={staffList}
+          />
+        );
+      case 'calendar':
+        return (
+          <EventsCalendar 
+            onBack={() => setCurrentView('dashboard')}
+            events={events}
+            setEvents={setEvents}
+          />
+        );
       case 'timetable':
         return (
           <TimetableView 
@@ -89,6 +110,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
             currentUser={user}
             leaves={leaves}
             setLeaves={setLeaves}
+            users={[user, ...staffList]} // Pass all potential users for name resolution
           />
         );
       case 'dashboard':
@@ -152,11 +174,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
                             onClick={() => setCurrentView('finance')}
                         />
                         <DashboardCard 
-                            title="School Settings" 
-                            description="Configure terms & sessions"
-                            icon={ShieldCheck}
-                            color="text-purple-600"
-                            bgColor="bg-purple-50"
+                            title="Leave Requests" 
+                            description="Approve/Reject staff leaves"
+                            icon={FileText}
+                            color="text-rose-600"
+                            bgColor="bg-rose-50"
+                            onClick={() => setCurrentView('leave_request')}
                         />
                         <DashboardCard 
                             title="Reports & Analytics" 
@@ -164,6 +187,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
                             icon={TrendingUp}
                             color="text-orange-600"
                             bgColor="bg-orange-50"
+                            onClick={() => setCurrentView('reports')}
                         />
                     </>
                 )}
@@ -219,6 +243,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
                     icon={Calendar}
                     color="text-indigo-600"
                     bgColor="bg-indigo-50"
+                    onClick={() => setCurrentView('calendar')}
                 />
             </div>
 
@@ -298,7 +323,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 h-full">
         {renderContent()}
       </main>
     </div>

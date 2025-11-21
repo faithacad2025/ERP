@@ -88,3 +88,15 @@ export interface LeaveRequest {
   status: LeaveStatus;
   appliedOn: string;
 }
+
+export type EventType = 'Academic' | 'Holiday' | 'Sports' | 'Cultural' | 'Meeting';
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description: string;
+  date: string; // YYYY-MM-DD
+  type: EventType;
+  startTime?: string;
+  endTime?: string;
+}

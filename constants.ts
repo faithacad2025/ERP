@@ -1,5 +1,5 @@
 
-import { School, SchoolId, User, Transaction, TimeSlot, LeaveRequest } from './types';
+import { School, SchoolId, User, Transaction, TimeSlot, LeaveRequest, CalendarEvent } from './types';
 
 export const SCHOOLS: School[] = [
   {
@@ -323,5 +323,51 @@ export const MOCK_LEAVES: LeaveRequest[] = [
     reason: 'Christmas Holidays',
     status: 'Rejected',
     appliedOn: '2023-12-10'
+  }
+];
+
+export const MOCK_EVENTS: CalendarEvent[] = [
+  {
+    id: 'e1',
+    title: 'Republic Day',
+    description: 'National Holiday - Flag Hoisting Ceremony',
+    date: '2024-01-26',
+    type: 'Holiday',
+    startTime: '08:00',
+    endTime: '11:00'
+  },
+  {
+    id: 'e2',
+    title: 'Annual Sports Meet',
+    description: 'Inter-house sports competition',
+    date: '2024-02-15',
+    type: 'Sports',
+    startTime: '09:00',
+    endTime: '16:00'
+  },
+  {
+    id: 'e3',
+    title: 'Staff Meeting',
+    description: 'Monthly academic review',
+    date: '2024-03-05',
+    type: 'Meeting',
+    startTime: '14:30',
+    endTime: '16:00'
+  },
+  {
+    id: 'e4',
+    title: 'Final Exams Start',
+    description: 'Commencement of annual examinations for all grades',
+    date: '2024-03-15',
+    type: 'Academic',
+    startTime: '08:30',
+    endTime: '12:30'
+  },
+  {
+    id: 'e5',
+    title: 'Holi Holiday',
+    description: 'School closed for Holi festival',
+    date: '2024-03-25',
+    type: 'Holiday'
   }
 ];
