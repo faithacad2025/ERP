@@ -8,6 +8,22 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input: React.FC<InputProps> = ({ label, icon: Icon, error, className = '', ...props }) => {
+  
+  const handleClick = (e: React.MouseEvent<HTMLInputElement>) => {
+    // Automatically open the date picker on click for better UX
+    if (props.type === 'date' && 'showPicker' in HTMLInputElement.prototype) {
+      try {
+        e.currentTarget.showPicker();
+      } catch (error) {
+        // Fallback or ignore if not supported/allowed in context
+      }
+    }
+    
+    if (props.onClick) {
+      props.onClick(e);
+    }
+  };
+
   return (
     <div className="w-full space-y-1">
       <label className="block text-sm font-medium text-slate-700">
@@ -27,6 +43,7 @@ export const Input: React.FC<InputProps> = ({ label, icon: Icon, error, classNam
             ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}
             ${className}
           `}
+          onClick={handleClick}
           {...props}
         />
       </div>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { User } from '../../types';
 import { Button } from '../ui/Button';
@@ -5,7 +6,8 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { 
   ArrowLeft, Plus, Search, Mail, Phone, Briefcase, 
-  Edit2, Trash2, Filter, CheckCircle, X, Users, ShieldOff, Briefcase as BriefcaseIcon
+  Edit2, Trash2, Filter, CheckCircle, X, ShieldOff, Briefcase as BriefcaseIcon,
+  Calendar
 } from 'lucide-react';
 
 interface StaffManagementProps {
@@ -25,7 +27,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
     email: '',
     department: '',
     phone: '',
-    status: 'Active'
+    status: 'Active',
+    joinDate: new Date().toISOString().split('T')[0]
   });
 
   const filteredStaff = staffList.filter(staff => 
@@ -40,7 +43,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
       email: '',
       department: '',
       phone: '',
-      status: 'Active'
+      status: 'Active',
+      joinDate: new Date().toISOString().split('T')[0]
     });
     setEditingId(null);
     setShowForm(false);
@@ -59,7 +63,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
             email: formData.email,
             department: formData.department,
             phone: formData.phone,
-            status: formData.status as 'Active' | 'Inactive' | 'On Leave'
+            status: formData.status as 'Active' | 'Inactive' | 'On Leave',
+            joinDate: formData.joinDate
           };
         }
         return staff;
@@ -75,7 +80,7 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
         email: formData.email,
         phone: formData.phone,
         department: formData.department,
-        joinDate: new Date().toISOString().split('T')[0],
+        joinDate: formData.joinDate,
         status: formData.status as 'Active' | 'Inactive' | 'On Leave'
       };
       setStaffList([staffMember, ...staffList]);
@@ -90,7 +95,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
       email: staff.email || '',
       department: staff.department || '',
       phone: staff.phone || '',
-      status: staff.status || 'Active'
+      status: staff.status || 'Active',
+      joinDate: staff.joinDate || new Date().toISOString().split('T')[0]
     });
     setEditingId(staff.id);
     setShowForm(true);
@@ -255,19 +261,25 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
               onChange={e => setFormData({...formData, phone: e.target.value})}
               placeholder="+91 98765 43210"
             />
-            <div className="md:col-span-2">
-               <Select
-                 label="Status"
-                 value={formData.status}
-                 onChange={e => setFormData({...formData, status: e.target.value})}
-                 icon={CheckCircle}
-                 options={[
-                   { value: 'Active', label: 'Active' },
-                   { value: 'On Leave', label: 'On Leave' },
-                   { value: 'Inactive', label: 'Inactive' }
-                 ]}
-               />
-            </div>
+            <Input 
+              label="Joining Date" 
+              type="date"
+              required 
+              value={formData.joinDate}
+              onChange={e => setFormData({...formData, joinDate: e.target.value})}
+              icon={Calendar}
+            />
+            <Select
+              label="Status"
+              value={formData.status}
+              onChange={e => setFormData({...formData, status: e.target.value})}
+              icon={CheckCircle}
+              options={[
+                { value: 'Active', label: 'Active' },
+                { value: 'On Leave', label: 'On Leave' },
+                { value: 'Inactive', label: 'Inactive' }
+              ]}
+            />
             <div className="md:col-span-2 flex justify-end mt-2 pt-2 border-t border-indigo-100">
               <Button type="submit">
                 {editingId ? 'Update Staff Member' : 'Create Account'}
@@ -356,14 +368,14 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
                     <div className="flex items-center justify-end gap-2">
                       <button 
                         onClick={() => handleEditClick(staff)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors" 
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors cursor-pointer" 
                         title="Edit"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={(e) => handleDeleteClick(e, staff.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors" 
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer" 
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />

@@ -43,7 +43,8 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
     address: '',
     status: 'Active',
     dob: '',
-    bloodGroup: ''
+    bloodGroup: '',
+    joinDate: new Date().toISOString().split('T')[0]
   };
 
   // Form State initialized based on defaultView
@@ -70,7 +71,8 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
     setViewMode('form');
   };
 
-  const handleEdit = (student: User) => {
+  const handleEdit = (e: React.MouseEvent | null, student: User) => {
+    if (e) e.stopPropagation();
     setFormData(student);
     setSelectedStudent(student);
     setViewMode('form');
@@ -81,7 +83,8 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
     setViewMode('profile');
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (e: React.MouseEvent | null, id: string) => {
+    if (e) e.stopPropagation();
     if (window.confirm('Are you sure you want to remove this student record?')) {
       setStudents(prev => prev.filter(s => s.id !== id));
       if (viewMode !== 'list') setViewMode('list');
@@ -102,7 +105,7 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
         role: 'student',
         schoolId: students[0]?.schoolId,
         username: formData.email?.split('@')[0] || `st_${Date.now()}`,
-        joinDate: new Date().toISOString().split('T')[0]
+        joinDate: formData.joinDate || new Date().toISOString().split('T')[0]
       };
       setStudents([newStudent, ...students]);
     }
@@ -139,10 +142,10 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
               </div>
               {canModify && (
                 <div className="flex gap-2">
-                  <Button variant="outline" onClick={() => handleEdit(selectedStudent)}>
+                  <Button variant="outline" onClick={(e) => handleEdit(e, selectedStudent)}>
                     <Edit2 className="w-4 h-4 mr-2" /> Edit Profile
                   </Button>
-                  <Button variant="secondary" className="text-red-600 border-red-100 hover:bg-red-50" onClick={() => handleDelete(selectedStudent.id)}>
+                  <Button variant="secondary" className="text-red-600 border-red-100 hover:bg-red-50" onClick={(e) => handleDelete(e, selectedStudent.id)}>
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
@@ -173,6 +176,13 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                     <div>
                       <p className="text-slate-900 font-medium">Address</p>
                       <p className="text-slate-500">{selectedStudent.address || 'Not set'}</p>
+                    </div>
+                  </div>
+                   <div className="flex items-start gap-3 text-sm">
+                    <Calendar className="w-4 h-4 text-slate-400 mt-0.5" />
+                    <div>
+                      <p className="text-slate-900 font-medium">Admission Date</p>
+                      <p className="text-slate-500">{selectedStudent.joinDate || 'Not set'}</p>
                     </div>
                   </div>
                 </div>
@@ -338,6 +348,7 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                type="date"
                value={formData.dob} 
                onChange={e => setFormData({...formData, dob: e.target.value})}
+               icon={Calendar}
              />
              <Input 
                label="Blood Group" 
@@ -346,6 +357,13 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                placeholder="e.g. O+"
              />
            </div>
+           <Input 
+             label="Admission Date" 
+             type="date"
+             value={formData.joinDate} 
+             onChange={e => setFormData({...formData, joinDate: e.target.value})}
+             icon={Calendar}
+           />
            <div className="md:col-span-2">
              <Input 
                label="Residential Address" 
@@ -473,13 +491,13 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                       </td>
                       <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="secondary" className="px-2 py-1 h-8 text-xs" onClick={() => handleViewProfile(student)}>
+                          <Button variant="secondary" className="px-2 py-1 h-8 text-xs cursor-pointer" onClick={() => handleViewProfile(student)}>
                              View
                           </Button>
                           {canModify && (
                             <button 
-                              onClick={() => handleDelete(student.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                              onClick={(e) => handleDelete(e, student.id)}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
                               title="Delete Student"
                             >
                               <Trash2 className="w-4 h-4" />

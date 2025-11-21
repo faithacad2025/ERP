@@ -5,7 +5,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { 
   ArrowLeft, Plus, Search, TrendingUp, TrendingDown, 
-  DollarSign, Filter, Download, Wallet, CreditCard, 
+  Filter, Download, Wallet, CreditCard, 
   Calendar
 } from 'lucide-react';
 
@@ -26,12 +26,14 @@ export const FinanceManagement: React.FC<FinanceManagementProps> = ({ onBack, tr
     category: string;
     description: string;
     paymentMethod: string;
+    date: string;
   }>({
     type: 'income',
     amount: '',
     category: '',
     description: '',
-    paymentMethod: 'Bank Transfer'
+    paymentMethod: 'Bank Transfer',
+    date: new Date().toISOString().split('T')[0]
   });
 
   // Calculations for KPI Cards
@@ -61,7 +63,7 @@ export const FinanceManagement: React.FC<FinanceManagementProps> = ({ onBack, tr
       category: formData.category,
       amount: parseFloat(formData.amount),
       description: formData.description,
-      date: new Date().toISOString().split('T')[0],
+      date: formData.date,
       status: 'Completed',
       paymentMethod: formData.paymentMethod
     };
@@ -73,7 +75,8 @@ export const FinanceManagement: React.FC<FinanceManagementProps> = ({ onBack, tr
       amount: '',
       category: '',
       description: '',
-      paymentMethod: 'Bank Transfer'
+      paymentMethod: 'Bank Transfer',
+      date: new Date().toISOString().split('T')[0]
     });
   };
 
@@ -199,6 +202,15 @@ export const FinanceManagement: React.FC<FinanceManagementProps> = ({ onBack, tr
                value={formData.amount} 
                onChange={e => setFormData({...formData, amount: e.target.value})}
                placeholder="0.00"
+             />
+
+             <Input 
+               label="Date" 
+               type="date" 
+               required 
+               value={formData.date} 
+               onChange={e => setFormData({...formData, date: e.target.value})}
+               icon={Calendar}
              />
 
              <Input 
