@@ -14,6 +14,7 @@ export interface School {
 export interface User {
   id: string;
   username: string;
+  password?: string; // Added for local auth simulation
   name: string;
   role: 'admin' | 'staff' | 'student';
   schoolId: SchoolId;
@@ -75,6 +76,15 @@ export interface TimeSlot {
 
 export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused';
 
+export interface AttendanceRecord {
+  id: string;
+  date: string;
+  studentId: string;
+  status: AttendanceStatus;
+  markedBy: string; // Staff ID
+  schoolId: string;
+}
+
 export type LeaveStatus = 'Pending' | 'Approved' | 'Rejected';
 export type LeaveType = 'Sick Leave' | 'Casual Leave' | 'Emergency Leave' | 'Unpaid Leave';
 
@@ -99,4 +109,13 @@ export interface CalendarEvent {
   type: EventType;
   startTime?: string;
   endTime?: string;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  timestamp: string;
+  read: boolean;
 }

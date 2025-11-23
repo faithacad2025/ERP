@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { User, AttendanceStatus } from '../../types';
+import { User, AttendanceStatus, AttendanceRecord } from '../../types';
 import { Button } from '../ui/Button';
 import { Select } from '../ui/Select';
 import { Input } from '../ui/Input';
@@ -10,23 +11,24 @@ import {
 
 interface AttendanceViewProps {
   onBack: () => void;
-  students: User[]; // Pass full list, we will filter locally
+  students: User[];
+  attendance: AttendanceRecord[];
+  setAttendance: React.Dispatch<React.SetStateAction<AttendanceRecord[]>>;
+  currentUser: User;
 }
 
-export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students }) => {
+export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students, attendance, setAttendance, currentUser }) => {
   const [selectedGrade, setSelectedGrade] = useState<string>('');
   const [selectedSection, setSelectedSection] = useState<string>('');
   const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
-  // Map of studentId -> Status
+  // Map of studentId -> Status (local working state)
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceStatus>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Extract unique grades and sections for dropdowns
   const availableGrades = Array.from(new Set(students.map(s => s.grade).filter(Boolean))) as string[];
   const availableSections = Array.from(new Set(students.map(s => s.section).filter(Boolean))) as string[];
 
-  // Filter students based on selection
   const classStudents = students.filter(s => 
     (!selectedGrade || s.grade === selectedGrade) && 
     (!selectedSection || s.section === selectedSection) &&
@@ -34,15 +36,20 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students
     s.status === 'Active'
   );
 
-  // Reset attendance when class changes
+  // Load existing attendance when date/class changes
   useEffect(() => {
+    const existingRecords = attendance.filter(r => r.date === date);
     const initialMap: Record<string, AttendanceStatus> = {};
+    
     classStudents.forEach(s => {
-      initialMap[s.id] = 'Present'; // Default to Present
+      // Check if we have a record for this student on this date
+      const record = existingRecords.find(r => r.studentId === s.id);
+      initialMap[s.id] = record ? record.status : 'Present'; // Default to Present if no record
     });
+    
     setAttendanceMap(initialMap);
     setIsSubmitted(false);
-  }, [selectedGrade, selectedSection]);
+  }, [selectedGrade, selectedSection, date, attendance, classStudents.length]); // Dependencies
 
   const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
     setAttendanceMap(prev => ({
@@ -61,12 +68,23 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students
   };
 
   const handleSubmit = () => {
-    // In a real app, this would send data to backend
+    // Convert map to records
+    const newRecords: AttendanceRecord[] = classStudents.map(student => ({
+      id: `${date}_${student.id}`,
+      date: date,
+      studentId: student.id,
+      status: attendanceMap[student.id],
+      markedBy: currentUser.id,
+      schoolId: currentUser.schoolId
+    }));
+
+    // Remove old records for this date/students and add new ones
+    // We filter out any records that match the current date and students we are updating
+    const studentIds = new Set(classStudents.map(s => s.id));
+    const otherRecords = attendance.filter(r => !(r.date === date && studentIds.has(r.studentId)));
+    
+    setAttendance([...otherRecords, ...newRecords]);
     setIsSubmitted(true);
-    // Simulate API call
-    setTimeout(() => {
-      alert(`Attendance saved for ${classStudents.length} students on ${date}`);
-    }, 100);
   };
 
   // Stats
@@ -76,7 +94,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      {/* Header */}
       <div className="flex items-center gap-3">
         <button 
           onClick={onBack}
@@ -90,7 +107,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students
         </div>
       </div>
 
-      {/* Controls / Filters */}
       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4">
         <Input 
           label="Select Date"
@@ -126,7 +142,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students
 
       {classStudents.length > 0 ? (
         <>
-          {/* Quick Actions & Stats */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
              <div className="flex gap-2">
                 <Button variant="secondary" className="text-xs h-8" onClick={() => markAll('Present')}>Mark All Present</Button>
@@ -139,7 +154,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students
              </div>
           </div>
 
-          {/* Student List */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -166,41 +180,24 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => handleStatusChange(student.id, 'Present')}
-                            className={`flex flex-col items-center justify-center w-16 py-1.5 rounded-lg border transition-all ${
-                              attendanceMap[student.id] === 'Present'
-                                ? 'bg-emerald-50 border-emerald-200 text-emerald-700 ring-1 ring-emerald-500'
-                                : 'bg-white border-slate-200 text-slate-400 hover:border-emerald-200 hover:text-emerald-600'
-                            }`}
-                          >
-                            <CheckCircle className="w-5 h-5 mb-0.5" />
-                            <span className="text-[10px] font-medium">Present</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleStatusChange(student.id, 'Absent')}
-                            className={`flex flex-col items-center justify-center w-16 py-1.5 rounded-lg border transition-all ${
-                              attendanceMap[student.id] === 'Absent'
-                                ? 'bg-red-50 border-red-200 text-red-700 ring-1 ring-red-500'
-                                : 'bg-white border-slate-200 text-slate-400 hover:border-red-200 hover:text-red-600'
-                            }`}
-                          >
-                            <XCircle className="w-5 h-5 mb-0.5" />
-                            <span className="text-[10px] font-medium">Absent</span>
-                          </button>
-
-                          <button
-                            onClick={() => handleStatusChange(student.id, 'Late')}
-                            className={`flex flex-col items-center justify-center w-16 py-1.5 rounded-lg border transition-all ${
-                              attendanceMap[student.id] === 'Late'
-                                ? 'bg-amber-50 border-amber-200 text-amber-700 ring-1 ring-amber-500'
-                                : 'bg-white border-slate-200 text-slate-400 hover:border-amber-200 hover:text-amber-600'
-                            }`}
-                          >
-                            <Clock className="w-5 h-5 mb-0.5" />
-                            <span className="text-[10px] font-medium">Late</span>
-                          </button>
+                          {['Present', 'Absent', 'Late'].map((status) => (
+                             <button
+                                key={status}
+                                onClick={() => handleStatusChange(student.id, status as AttendanceStatus)}
+                                className={`flex flex-col items-center justify-center w-16 py-1.5 rounded-lg border transition-all ${
+                                  attendanceMap[student.id] === status
+                                    ? status === 'Present' ? 'bg-emerald-50 border-emerald-200 text-emerald-700 ring-1 ring-emerald-500' :
+                                      status === 'Absent' ? 'bg-red-50 border-red-200 text-red-700 ring-1 ring-red-500' :
+                                      'bg-amber-50 border-amber-200 text-amber-700 ring-1 ring-amber-500'
+                                    : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                                }`}
+                              >
+                                {status === 'Present' && <CheckCircle className="w-5 h-5 mb-0.5" />}
+                                {status === 'Absent' && <XCircle className="w-5 h-5 mb-0.5" />}
+                                {status === 'Late' && <Clock className="w-5 h-5 mb-0.5" />}
+                                <span className="text-[10px] font-medium">{status}</span>
+                              </button>
+                          ))}
                         </div>
                       </td>
                       <td className="px-6 py-4 hidden sm:table-cell">
@@ -225,7 +222,6 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ onBack, students
         </div>
       )}
 
-      {/* Sticky Bottom Save Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-lg transform transition-transform z-20">
          <div className="max-w-7xl mx-auto flex justify-between items-center px-4 sm:px-6 lg:px-8">
             <div className="text-sm text-slate-500 hidden sm:block">

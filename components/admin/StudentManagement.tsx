@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { User } from '../../types';
+import { User, Notification } from '../../types';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -16,6 +16,7 @@ interface StudentManagementProps {
   setStudents: React.Dispatch<React.SetStateAction<User[]>>;
   defaultView?: 'list' | 'form';
   canModify?: boolean;
+  sendNotification?: (n: Notification) => void;
 }
 
 type ViewMode = 'list' | 'profile' | 'form';
@@ -25,7 +26,8 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
   students, 
   setStudents,
   defaultView = 'list',
-  canModify = true
+  canModify = true,
+  sendNotification
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView === 'form' ? 'form' : 'list');
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
@@ -47,7 +49,6 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
     joinDate: new Date().toISOString().split('T')[0]
   };
 
-  // Form State initialized based on defaultView
   const [formData, setFormData] = useState<Partial<User>>(
     defaultView === 'form' ? initialFormState : {}
   );
@@ -72,23 +73,41 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
   };
 
   const handleEdit = (e: React.MouseEvent | null, student: User) => {
-    if (e) e.stopPropagation();
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
     setFormData(student);
     setSelectedStudent(student);
     setViewMode('form');
   };
 
-  const handleViewProfile = (student: User) => {
+  const handleViewProfile = (student: User, e?: React.MouseEvent) => {
+    // If e is provided (button click), stop prop. If undefined (row click), it's fine.
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+    }
     setSelectedStudent(student);
     setViewMode('profile');
   };
 
   const handleDelete = (e: React.MouseEvent | null, id: string) => {
-    if (e) e.stopPropagation();
-    if (window.confirm('Are you sure you want to remove this student record?')) {
-      setStudents(prev => prev.filter(s => s.id !== id));
-      if (viewMode !== 'list') setViewMode('list');
+    // Crucial: Stop event from bubbling to the row click handler
+    if (e) {
+        e.stopPropagation();
+        e.preventDefault();
     }
+    
+    // Use a small timeout to allow UI to register the click if needed, 
+    // but mainly to ensure the confirm dialog doesn't block the event loop weirdly
+    setTimeout(() => {
+        if (window.confirm('Are you sure you want to remove this student record? This action cannot be undone.')) {
+            setStudents(prev => prev.filter(s => s.id !== id));
+            setSelectedStudent(null); // Clear selection
+            if (viewMode !== 'list') setViewMode('list');
+        }
+    }, 10);
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -99,20 +118,31 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
       setStudents(prev => prev.map(s => s.id === selectedStudent.id ? { ...s, ...formData } as User : s));
     } else {
       // Create
+      const username = formData.email?.split('@')[0] || `st_${Date.now()}`;
       const newStudent: User = {
         ...formData as User,
         id: `st_${Date.now()}`,
         role: 'student',
         schoolId: students[0]?.schoolId,
-        username: formData.email?.split('@')[0] || `st_${Date.now()}`,
+        username: username,
+        password: username, // Default password
         joinDate: formData.joinDate || new Date().toISOString().split('T')[0]
       };
       setStudents([newStudent, ...students]);
+      
+      if (sendNotification) {
+         sendNotification({
+            id: `notif_${Date.now()}`,
+            title: 'New Admission',
+            message: `${newStudent.name} has been enrolled in Class ${newStudent.grade}.`,
+            type: 'success',
+            timestamp: new Date().toISOString(),
+            read: false
+         });
+      }
     }
     setViewMode('list');
   };
-
-  // --- SUB-VIEWS ---
 
   const renderProfile = () => {
     if (!selectedStudent) return null;
@@ -372,6 +402,13 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                placeholder="Full address..."
              />
            </div>
+           
+           {!selectedStudent && (
+               <div className="md:col-span-2 mt-2 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                  <p className="text-xs text-indigo-600 font-medium mb-1">Student Portal Access</p>
+                  <p className="text-xs text-slate-500">The student will be able to login using their email prefix as username. Default password is same as username.</p>
+               </div>
+            )}
         </div>
 
         <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
@@ -457,7 +494,7 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredStudents.length > 0 ? filteredStudents.map((student) => (
-                    <tr key={student.id} className="hover:bg-slate-50/80 transition-colors cursor-pointer" onClick={() => handleViewProfile(student)}>
+                    <tr key={student.id} className="hover:bg-slate-50/80 transition-colors cursor-pointer group" onClick={() => handleViewProfile(student)}>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-semibold text-sm">
@@ -489,15 +526,21 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                           {student.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
+                      <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
-                          <Button variant="secondary" className="px-2 py-1 h-8 text-xs cursor-pointer" onClick={() => handleViewProfile(student)}>
+                          <Button 
+                            variant="secondary" 
+                            type="button"
+                            className="px-2 py-1 h-8 text-xs cursor-pointer bg-white" 
+                            onClick={(e) => handleViewProfile(student, e)}
+                          >
                              View
                           </Button>
                           {canModify && (
                             <button 
+                              type="button"
                               onClick={(e) => handleDelete(e, student.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer relative z-10"
                               title="Delete Student"
                             >
                               <Trash2 className="w-4 h-4" />

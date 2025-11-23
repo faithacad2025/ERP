@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { User, SchoolId, Transaction, LeaveRequest, CalendarEvent } from '../types';
-import { SCHOOLS, MOCK_STAFF_LIST, MOCK_TRANSACTIONS, MOCK_STUDENTS, MOCK_TIMETABLE, MOCK_LEAVES, MOCK_EVENTS } from '../constants';
+import { User, SchoolId, Transaction, LeaveRequest, CalendarEvent, Notification, AttendanceRecord } from '../types';
+import { SCHOOLS, MOCK_TIMETABLE } from '../constants';
 import { StaffManagement } from './admin/StaffManagement';
 import { FinanceManagement } from './admin/FinanceManagement';
 import { StudentManagement } from './admin/StudentManagement';
@@ -13,24 +13,44 @@ import { LeaveRequestView } from './staff/LeaveRequestView';
 import { 
   LogOut, Bell, Search, LayoutGrid, Users, BookOpen, Calendar, 
   TrendingUp, DollarSign, UserCheck, FileText, Clock, ShieldCheck,
-  ChevronRight, UserPlus
+  ChevronRight, UserPlus, Info, CheckCircle, AlertTriangle, XCircle
 } from 'lucide-react';
 
 interface DashboardViewProps {
   user: User;
   onLogout: () => void;
+  // Shared State
+  staffList: User[];
+  setStaffList: React.Dispatch<React.SetStateAction<User[]>>;
+  students: User[];
+  setStudents: React.Dispatch<React.SetStateAction<User[]>>;
+  transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  leaves: LeaveRequest[];
+  setLeaves: React.Dispatch<React.SetStateAction<LeaveRequest[]>>;
+  events: CalendarEvent[];
+  setEvents: React.Dispatch<React.SetStateAction<CalendarEvent[]>>;
+  attendance: AttendanceRecord[];
+  setAttendance: React.Dispatch<React.SetStateAction<AttendanceRecord[]>>;
+  
+  notifications: Notification[];
+  sendNotification: (n: Notification) => void;
 }
 
 type DashboardViewType = 'dashboard' | 'staff_management' | 'students' | 'finance' | 'admissions' | 'timetable' | 'attendance' | 'leave_request' | 'reports' | 'calendar';
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ 
+    user, onLogout,
+    staffList, setStaffList,
+    students, setStudents,
+    transactions, setTransactions,
+    leaves, setLeaves,
+    events, setEvents,
+    attendance, setAttendance,
+    notifications, sendNotification
+}) => {
   const [currentView, setCurrentView] = useState<DashboardViewType>('dashboard');
-  // Hoisted state to persist changes across views
-  const [staffList, setStaffList] = useState<User[]>(MOCK_STAFF_LIST);
-  const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
-  const [students, setStudents] = useState<User[]>(MOCK_STUDENTS);
-  const [leaves, setLeaves] = useState<LeaveRequest[]>(MOCK_LEAVES);
-  const [events, setEvents] = useState<CalendarEvent[]>(MOCK_EVENTS);
+  const [showNotifications, setShowNotifications] = useState(false);
   
   const school = SCHOOLS.find(s => s.id === user.schoolId);
   const isAdmin = user.role === 'admin';
@@ -52,6 +72,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
             students={students}
             setStudents={setStudents}
             canModify={isAdmin}
+            sendNotification={sendNotification}
           />
         );
       case 'admissions':
@@ -62,6 +83,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
             setStudents={setStudents}
             defaultView="form"
             canModify={isAdmin}
+            sendNotification={sendNotification}
           />
         );
       case 'finance':
@@ -101,6 +123,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
           <AttendanceView 
             onBack={() => setCurrentView('dashboard')}
             students={students}
+            attendance={attendance}
+            setAttendance={setAttendance}
+            currentUser={user}
           />
         );
       case 'leave_request':
@@ -110,7 +135,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
             currentUser={user}
             leaves={leaves}
             setLeaves={setLeaves}
-            users={[user, ...staffList]} // Pass all potential users for name resolution
+            users={[user, ...staffList]}
           />
         );
       case 'dashboard':
@@ -151,7 +176,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
                         />
                         <DashboardCard 
                             title="Total Students" 
-                            description="View enrollment stats & profiles"
+                            description={`${students.length} students enrolled`}
                             icon={Users}
                             color="text-blue-600"
                             bgColor="bg-blue-50"
@@ -159,7 +184,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
                         />
                         <DashboardCard 
                             title="Staff Management" 
-                            description="Manage teachers & payroll"
+                            description={`${staffList.length} active staff members`}
                             icon={UserCheck}
                             color="text-emerald-600"
                             bgColor="bg-emerald-50"
@@ -175,7 +200,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
                         />
                         <DashboardCard 
                             title="Leave Requests" 
-                            description="Approve/Reject staff leaves"
+                            description={`${leaves.filter(l => l.status === 'Pending').length} pending requests`}
                             icon={FileText}
                             color="text-rose-600"
                             bgColor="bg-rose-50"
@@ -239,7 +264,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
                 
                 <DashboardCard 
                     title="Events Calendar" 
-                    description="Upcoming holidays & events"
+                    description={`${events.length} upcoming events`}
                     icon={Calendar}
                     color="text-indigo-600"
                     bgColor="bg-indigo-50"
@@ -249,7 +274,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
 
             <div className="mt-12 text-center">
                 <p className="text-slate-400 text-sm">
-                    Faith Academy ERP v1.0 • {isAdmin ? 'Administrative Access' : 'Staff Access'}
+                    Faith Academy ERP v1.0 • {isAdmin ? 'Administrative Access' : 'Staff Access'} • System Status: Online
                 </p>
             </div>
           </div>
@@ -259,6 +284,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+      {/* Toast Notifications */}
+      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+         {notifications.map((note) => (
+             <div key={note.id} className={`p-4 rounded-lg shadow-lg border flex items-start gap-3 w-80 animate-in slide-in-from-right-10 bg-white ${
+                 note.type === 'success' ? 'border-emerald-100' : 
+                 note.type === 'error' ? 'border-red-100' : 'border-blue-100'
+             }`}>
+                {note.type === 'success' && <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0" />}
+                {note.type === 'info' && <Info className="w-5 h-5 text-blue-500 shrink-0" />}
+                {note.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />}
+                {note.type === 'error' && <XCircle className="w-5 h-5 text-red-500 shrink-0" />}
+                <div>
+                    <h4 className="font-semibold text-sm text-slate-900">{note.title}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">{note.message}</p>
+                </div>
+             </div>
+         ))}
+      </div>
+
       {/* Top Navigation */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -287,10 +331,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ user, onLogout }) 
                     className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 w-64"
                 />
               </div>
-              <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-              </button>
+              
+              {/* Notification Bell */}
+              <div className="relative">
+                <button 
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors relative"
+                >
+                    <Bell className="w-5 h-5" />
+                    {notifications.length > 0 && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>}
+                </button>
+              </div>
+
               <div className="h-8 w-px bg-slate-200 mx-2"></div>
               <div className="flex items-center gap-3">
                  <div className="text-right hidden sm:block">

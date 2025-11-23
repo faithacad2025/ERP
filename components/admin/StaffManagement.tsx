@@ -28,7 +28,9 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
     department: '',
     phone: '',
     status: 'Active',
-    joinDate: new Date().toISOString().split('T')[0]
+    joinDate: new Date().toISOString().split('T')[0],
+    // For new users only
+    password: ''
   });
 
   const filteredStaff = staffList.filter(staff => 
@@ -44,7 +46,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
       department: '',
       phone: '',
       status: 'Active',
-      joinDate: new Date().toISOString().split('T')[0]
+      joinDate: new Date().toISOString().split('T')[0],
+      password: ''
     });
     setEditingId(null);
     setShowForm(false);
@@ -71,9 +74,11 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
       }));
     } else {
       // Create new staff
+      const username = formData.email.split('@')[0] || `user_${Date.now()}`;
       const staffMember: User = {
         id: `new_${Date.now()}`,
-        username: formData.email.split('@')[0] || `user_${Date.now()}`,
+        username: username,
+        password: formData.password || username, // Default password is username if not provided
         name: formData.name,
         role: 'staff',
         schoolId: staffList[0]?.schoolId, // Inherit from list context
@@ -96,7 +101,8 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
       department: staff.department || '',
       phone: staff.phone || '',
       status: staff.status || 'Active',
-      joinDate: staff.joinDate || new Date().toISOString().split('T')[0]
+      joinDate: staff.joinDate || new Date().toISOString().split('T')[0],
+      password: '' // Don't show password on edit
     });
     setEditingId(staff.id);
     setShowForm(true);
@@ -280,6 +286,12 @@ export const StaffManagement: React.FC<StaffManagementProps> = ({ onBack, staffL
                 { value: 'Inactive', label: 'Inactive' }
               ]}
             />
+            {!editingId && (
+               <div className="md:col-span-2 mt-2 bg-white/50 p-3 rounded-lg border border-indigo-100">
+                  <p className="text-xs text-indigo-600 font-medium mb-1">Login Credentials</p>
+                  <p className="text-xs text-slate-500">The username will be the email prefix. The default password will be the same as the username.</p>
+               </div>
+            )}
             <div className="md:col-span-2 flex justify-end mt-2 pt-2 border-t border-indigo-100">
               <Button type="submit">
                 {editingId ? 'Update Staff Member' : 'Create Account'}
